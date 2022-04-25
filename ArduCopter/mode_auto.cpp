@@ -44,11 +44,6 @@ bool ModeAuto::init(bool ignore_checks)
               gcs().send_text(MAV_SEVERITY_CRITICAL, "Auto: Planck not ready for takeoff");
             return false;
           }
-
-          if(!copter.planck_interface.get_commbox_state()) {
-            gcs().send_text(MAV_SEVERITY_CRITICAL, "Auto: Planck Commbox GPS not ready");
-            return false;
-          }
         }
 
         // stop ROI from carrying over from previous runs of the mission
