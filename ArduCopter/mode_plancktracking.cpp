@@ -37,8 +37,8 @@ void ModePlanckTracking::run() {
 
     // check if gimbal steering needs to controlling the vehicle yaw
     AP_Mount *mount = AP::mount();
-    bool is_paylod_yaw_rate = false;
-    bool use_paylod_yaw_rate = false;
+    bool is_payload_yaw_rate = false;
+    bool use_payload_yaw_rate = false;
     float payload_yaw_rate_cds = 0;
 
     //Check for tether high tension
@@ -69,7 +69,7 @@ void ModePlanckTracking::run() {
                   direction,
                   relative_angle);
           }
-          is_paylod_yaw_rate = false;
+          is_payload_yaw_rate = false;
         }
         else if(!mount->has_pan_control() || mount->mount_yaw_follow_mode == AP_Mount::gimbal_yaw_follows_vehicle)
         {
@@ -77,12 +77,12 @@ void ModePlanckTracking::run() {
           //so we set the set the fixed yaw command to this rate, and tell the
           //angle controller in mode guided to interpret as a rate. Note that the
           //auto yaw will be set to mode fixed, though it is actually controlling rate.
-          is_paylod_yaw_rate = true;
+          is_payload_yaw_rate = true;
 
           if(copter.mode_guided.mode()==Guided_Angle)
           {
             //If we've stopped getting the mavlink yaw rate commands, use 0 yaw rate command
-            if(AP_HAL::micros64() - (mount->get_last_mount_control_time_us() > 500000))
+            if((AP_HAL::micros64() - mount->get_last_mount_control_time_us()) > 50000)
             {
               copter.flightmode->auto_yaw.set_fixed_yaw(
                     0.0f,
@@ -104,10 +104,10 @@ void ModePlanckTracking::run() {
           {
             //if we have tablet rate commands have been received and are not stale, and we're in posvel,
             //then use tablet (payload) yaw rate commands instead of ACE yaw/yaw rate commands
-            if(copter.flightmode->auto_yaw.mode() == AUTO_YAW_RATE && (AP_HAL::micros64() - (mount->get_last_mount_control_time_us() <= 500000)))
+            if((copter.flightmode->auto_yaw.mode() == AUTO_YAW_RATE) && ((AP_HAL::micros64() - mount->get_last_mount_control_time_us()) <= 500000))
             {
                payload_yaw_rate_cds = copter.flightmode->auto_yaw.rate_cds();
-               use_paylod_yaw_rate = true;
+               use_payload_yaw_rate = true;
             }
           }
         }
@@ -192,7 +192,7 @@ void ModePlanckTracking::run() {
                       && !high_tension)
               {
                   yaw_cd = copter.flightmode->auto_yaw.yaw();
-                  is_yaw_rate = is_paylod_yaw_rate;
+                  is_yaw_rate = is_payload_yaw_rate;
               }
 
               //Convert this to quaternions, yaw rates
@@ -303,10 +303,10 @@ void ModePlanckTracking::run() {
                   }
 
                   //use payload yaw rate if we have it
-                  if(use_paylod_yaw_rate && is_paylod_yaw_rate)
+                  if(use_payload_yaw_rate && is_payload_yaw_rate)
                   {
                     yaw_rate_cmd = payload_yaw_rate_cds;
-                    is_yaw_rate = use_paylod_yaw_rate;
+                    is_yaw_rate = use_payload_yaw_rate;
                   }
                   else if(is_yaw_rate)
                   {
