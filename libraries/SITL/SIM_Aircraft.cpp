@@ -127,7 +127,7 @@ void Aircraft::set_precland(SIM_Precland *_precland) {
 */
 float Aircraft::hagl() const
 {
-    return (-position.z) + home.alt * 0.01f - ground_level - frame_height - ground_height_difference();
+    return (float)((double)(-position.z) + (double)home.alt * 0.01f - (double)ground_level - (double)frame_height - (double)ground_height_difference());
 }
 
 /*
@@ -653,7 +653,7 @@ void Aircraft::update_dynamics(const Vector3f &rot_accel)
             GCS_SEND_TEXT(MAV_SEVERITY_INFO, "SIM Hit ground at %f m/s", velocity_ef.z);
             last_ground_contact_ms = AP_HAL::millis();
         }
-        position.z = -(ground_level + frame_height - home.alt * 0.01f + ground_height_difference());
+        position.z = -(float)((double)ground_level + (double)frame_height - (double)(home.alt * 0.01f) + (double)ground_height_difference());
 
         // get speed of ground movement (for ship takeoff/landing)
         float yaw_rate = 0;

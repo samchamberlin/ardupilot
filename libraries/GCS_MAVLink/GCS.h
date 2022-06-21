@@ -88,7 +88,7 @@ void gcs_out_of_space_to_send_count(mavlink_channel_t chan);
     }
 #define MAV_STREAM_TERMINATOR { (streams)0, nullptr, 0 }
 
-#define GCS_MAVLINK_NUM_STREAM_RATES 10
+#define GCS_MAVLINK_NUM_STREAM_RATES 11
 class GCS_MAVLINK_Parameters
 {
 public:
@@ -229,6 +229,7 @@ public:
         STREAM_EXTRA3,
         STREAM_PARAMS,
         STREAM_ADSB,
+        STREAM_PLANCK,
         NUM_STREAMS
     };
 
@@ -336,8 +337,10 @@ public:
         return _locked;
     }
 
+    void send_planck_stateinfo();
+
     // return a bitmap of active channels. Used by libraries to loop
-    // over active channels to send to all active channels    
+    // over active channels to send to all active channels
     static uint8_t active_channel_mask(void) { return mavlink_active; }
 
     // return a bitmap of streaming channels
@@ -354,7 +357,7 @@ public:
     static bool is_private(mavlink_channel_t _chan) {
         return (mavlink_private & (1U<<(unsigned)_chan)) != 0;
     }
-    
+
     // return true if channel is private
     bool is_private(void) const { return is_private(chan); }
 
@@ -368,7 +371,7 @@ public:
       allow forwarding of packets / heartbeats to be blocked as required by some components to reduce traffic
     */
     static void disable_channel_routing(mavlink_channel_t chan) { routing.no_route_mask |= (1U<<(chan-MAVLINK_COMM_0)); }
-    
+
     /*
       search for a component in the routing table with given mav_type and retrieve it's sysid, compid and channel
       returns if a matching component is found
@@ -714,6 +717,10 @@ private:
 
     ap_message next_deferred_bucket_message_to_send(uint16_t now16_ms);
     void find_next_bucket_to_send(uint16_t now16_ms);
+
+    //Last time we sent a planck_stateinfo
+    uint64_t last_planck_stateinfo_sent_ms = 0;
+
     void remove_message_from_bucket(int8_t bucket, ap_message id);
 
     // bitmask of IDs the code has spontaneously decided it wants to
@@ -766,7 +773,7 @@ private:
 
     // time when we missed sending a parameter for GCS
     static uint32_t reserve_param_space_start_ms;
-    
+
     // bitmask of what mavlink channels are active
     static uint8_t mavlink_active;
 
@@ -786,7 +793,7 @@ private:
     };
 
     struct pending_param_reply {
-        mavlink_channel_t chan;        
+        mavlink_channel_t chan;
         float value;
         enum ap_var_type p_type;
         int16_t param_index;
@@ -843,7 +850,7 @@ private:
 
     struct pending_ftp {
         uint32_t offset;
-        mavlink_channel_t chan;        
+        mavlink_channel_t chan;
         uint16_t seq_number;
         FTP_OP opcode;
         FTP_OP req_opcode;
@@ -935,7 +942,7 @@ private:
     } alternative;
 
     JitterCorrection lag_correction;
-    
+
     // we cache the current location and send it even if the AHRS has
     // no idea where we are:
     struct Location global_position_current_loc;
@@ -1046,6 +1053,7 @@ public:
     void send_message(enum ap_message id);
     void send_mission_item_reached_message(uint16_t mission_index);
     void send_named_float(const char *name, float value) const;
+    void send_planck_stateinfo();
 
     void send_parameter_value(const char *param_name,
                               ap_var_type param_type,

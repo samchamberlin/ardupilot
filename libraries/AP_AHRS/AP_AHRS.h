@@ -337,6 +337,12 @@ public:
     // returns true on success and results are placed in innovations and variances arguments
     bool get_vel_innovations_and_variances_for_source(uint8_t source, Vector3f &innovations, Vector3f &variances) const WARN_IF_UNUSED;
 
+    // return the current acc estimate in meters/second^2, North/East/Down
+    // order. Must only be called if have_inertial_nav() is true
+    virtual bool get_accel_NED_Current(Vector3f &vec) const WARN_IF_UNUSED {
+        return false;
+    }
+
     // returns the expected NED magnetic field
     bool get_mag_field_NED(Vector3f& ret) const;
 

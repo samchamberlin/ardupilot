@@ -118,6 +118,12 @@ public:
     // but will always be kinematically consistent with the z component of the EKF position state
     float getPosDownDerivative(void) const;
 
+    // This returns the specific forces in the NED frame
+    void getAccelNED(Vector3F &accelNED) const;
+
+    // This returns the specific forces in the NED frame at Current Time
+    void getAccelNEDCurrent(Vector3F &accelNEDCurrent) const;
+
     // return body axis gyro bias estimates in rad/sec
     void getGyroBias(Vector3f &gyroBias) const;
 
@@ -825,6 +831,10 @@ private:
     uint32_t lastMagRead_ms;        // last time compass data was successfully read
     Vector3F velDotNED;             // rate of change of velocity in NED frame
     Vector3F velDotNEDfilt;         // low pass filtered velDotNED
+    Vector3F velDotNEDCurrent;      // rate of change of velocity in NED frame at Current Time
+    Vector3F velDotNEDCurrentFilt;  // low pass filtered velDotNEDCurrent
+    Vector3F delNavDownSampled;     // Accel data at the current time used to downsampled to a 100Hz rate
+    float delVelDTDownSampled;      // Delta time to downsampled the current time accel to a 100Hz rate
     uint32_t imuSampleTime_ms;      // time that the last IMU value was taken
     bool tasDataToFuse;             // true when new airspeed data is waiting to be fused
     uint32_t lastBaroReceived_ms;   // time last time we received baro height data

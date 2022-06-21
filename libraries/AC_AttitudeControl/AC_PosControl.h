@@ -391,6 +391,9 @@ public:
 
     static const struct AP_Param::GroupInfo var_info[];
 
+    // lean_angles_to_accel - convert roll, pitch lean angles to lat/lon frame accelerations in cm/s/s
+    void accel_to_lean_angles(float accel_x_cmss, float accel_y_cmss, float& roll_target, float& pitch_target) const;
+
 protected:
 
     // get throttle using vibration-resistant calculation (uses feed forward with manually calculated gain)
@@ -398,9 +401,6 @@ protected:
 
     // get earth-frame Z-axis acceleration with gravity removed in cm/s/s with +ve being up
     float get_z_accel_cmss() const { return -(_ahrs.get_accel_ef_blended().z + GRAVITY_MSS) * 100.0f; }
-
-    // lean_angles_to_accel - convert roll, pitch lean angles to lat/lon frame accelerations in cm/s/s
-    void accel_to_lean_angles(float accel_x_cmss, float accel_y_cmss, float& roll_target, float& pitch_target) const;
 
     // lean_angles_to_accel - convert roll, pitch lean angles to lat/lon frame accelerations in cm/s/s
     void lean_angles_to_accel_xy(float& accel_x_cmss, float& accel_y_cmss) const;
@@ -432,6 +432,7 @@ protected:
     AC_PID_2D       _pid_vel_xy;        // XY axis velocity controller to convert velocity error to desired acceleration
     AC_PID_Basic    _pid_vel_z;         // Z axis velocity controller to convert climb rate error to desired acceleration
     AC_PID          _pid_accel_z;       // Z axis acceleration controller to convert desired acceleration to throttle output
+    AP_Float        _poscontrol_high_jerkratio; // Defines the time it takes to reach the requested acceleration in z: higher to allow more agressive changes in z position target
 
     // internal variables
     float       _dt;                    // time difference (in seconds) between calls from the main program

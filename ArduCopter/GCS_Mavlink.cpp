@@ -463,6 +463,15 @@ const AP_Param::GroupInfo GCS_MAVLINK_Parameters::var_info[] = {
     // @Increment: 1
     // @User: Advanced
     AP_GROUPINFO("ADSB",   9, GCS_MAVLINK_Parameters, streamRates[9],  0),
+
+    // @Param: PLANCK_STATE
+    // @DisplayName: PLANCK_STATE stream rate to planck device
+    // @Description: PLANCK_STATE stream rate to planck device
+    // @Units: Hz
+    // @Range: 0 50
+    // @Increment: 1
+    // @User: Advanced
+    AP_GROUPINFO("PLANCK_STATE",   10, GCS_MAVLINK_Parameters, streamRates[10],  0),
 AP_GROUPEND
 };
 
@@ -536,6 +545,9 @@ static const ap_message STREAM_PARAMS_msgs[] = {
 static const ap_message STREAM_ADSB_msgs[] = {
     MSG_ADSB_VEHICLE
 };
+static const ap_message STREAM_PLANCK_msgs[] = {
+    MSG_PLANCK_STATEINFO
+};
 
 const struct GCS_MAVLINK::stream_entries GCS_MAVLINK::all_stream_entries[] = {
     MAV_STREAM_ENTRY(STREAM_RAW_SENSORS),
@@ -547,6 +559,7 @@ const struct GCS_MAVLINK::stream_entries GCS_MAVLINK::all_stream_entries[] = {
     MAV_STREAM_ENTRY(STREAM_EXTRA3),
     MAV_STREAM_ENTRY(STREAM_ADSB),
     MAV_STREAM_ENTRY(STREAM_PARAMS),
+    MAV_STREAM_ENTRY(STREAM_PLANCK),
     MAV_STREAM_TERMINATOR // must have this at end of stream_entries
 };
 
@@ -990,6 +1003,19 @@ MAV_RESULT GCS_MAVLINK_Copter::handle_command_long_packet(const mavlink_command_
         GCS_MAVLINK_Copter::convert_COMMAND_LONG_to_COMMAND_INT(packet, packet_int);
         return handle_command_pause_continue(packet_int);
     }
+
+    case MAV_CMD_NAV_PLANCK_WINGMAN: {
+        if (copter.set_mode(Mode::Number::PLANCKWINGMAN, ModeReason::GCS_COMMAND)) {
+            //Offset parameters are: param1: N, param2: E, param3: Up
+            float north = packet.param1;
+            float east = packet.param2;
+            float up = packet.param3 + (copter.inertial_nav.get_position_z_up_cm() / 100.);
+            copter.planck_interface.request_move_target(Vector3f(north,east,up),false,copter.pos_control->get_max_speed_up_cms(),copter.pos_control->get_max_speed_down_cms());
+            return MAV_RESULT_ACCEPTED;
+        }
+        return MAV_RESULT_FAILED;
+    }
+
     default:
         return GCS_MAVLINK::handle_command_long_packet(packet);
     }
@@ -1062,6 +1088,12 @@ void GCS_MAVLINK_Copter::handleMessage(const mavlink_message_t &msg)
         POSITION_TARGET_TYPEMASK_FORCE_SET;
 
     switch (msg.msgid) {
+
+    //Handle any messages coming from planck's software
+    case MAVLINK_MSG_ID_PLANCK_STATUS:
+    case MAVLINK_MSG_ID_PLANCK_CMD_MSG:
+        copter.planck_interface.handle_planck_mavlink_msg(chan, &msg, copter.ahrs);
+        break;
 
     case MAVLINK_MSG_ID_MANUAL_CONTROL:
     {
@@ -1263,7 +1295,28 @@ void GCS_MAVLINK_Copter::handleMessage(const mavlink_message_t &msg)
         } else if (pos_ignore && vel_ignore && !acc_ignore) {
             copter.mode_guided.set_accel(accel_vector, !yaw_ignore, yaw_cd, !yaw_rate_ignore, yaw_rate_cds, yaw_relative);
         } else if (!pos_ignore && vel_ignore && acc_ignore) {
-            copter.mode_guided.set_destination(pos_vector, !yaw_ignore, yaw_cd, !yaw_rate_ignore, yaw_rate_cds, yaw_relative, false);
+            //If we get a MAV_FRAME_LOCAL_OFFSET_NED command with zero x/y and
+            //an altitude value, this is a "change altitude" command.  If in
+            //planck tracking or planck_wingman, adjust the tracking altitude
+            //with a new target shift cmd
+            if(packet.coordinate_frame == MAV_FRAME_LOCAL_OFFSET_NED &&
+               is_equal(packet.x,0.0f) && is_equal(packet.y,0.0f) &&
+               (copter.flightmode == &copter.mode_plancktracking ||
+                copter.flightmode == &copter.mode_planckwingman))
+            {
+                //Don't allow if we don't have a good tag or commbox track or
+                //if we are not currently flying
+                if((copter.planck_interface.get_tag_tracking_state() ||
+                    copter.planck_interface.get_commbox_state()) &&
+                    !copter.ap.land_complete)
+                {
+                    copter.planck_interface.request_alt_change(pos_vector.z / 100.,copter.pos_control->get_max_speed_up_cms(),copter.pos_control->get_max_speed_down_cms());
+                }
+            }
+            else
+            {
+                copter.mode_guided.set_destination(pos_vector, !yaw_ignore, yaw_cd, !yaw_rate_ignore, yaw_rate_cds, yaw_relative, false);
+            }
         } else {
             // input is not valid so stop
             copter.mode_guided.init(true);

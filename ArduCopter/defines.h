@@ -80,7 +80,6 @@ enum tuning_func {
 #define WP_YAW_BEHAVIOR_LOOK_AT_NEXT_WP_EXCEPT_RTL    2   // auto pilot will face next waypoint except when doing RTL at which time it will stay in it's last
 #define WP_YAW_BEHAVIOR_LOOK_AHEAD                    3   // auto pilot will look ahead during missions and rtl (primarily meant for traditional helicopters)
 
-
 // Airmode
 enum class AirMode {
     AIRMODE_NONE,
@@ -154,6 +153,7 @@ enum LoggingParameters {
 #define FS_THR_ENABLED_ALWAYS_SMARTRTL_OR_RTL      4
 #define FS_THR_ENABLED_ALWAYS_SMARTRTL_OR_LAND     5
 #define FS_THR_ENABLED_AUTO_RTL_OR_RTL             6
+#define FS_THR_ENABLED_PLANCK_TRACK_PLANCK_LAND    7
 
 // GCS failsafe definitions (FS_GCS_ENABLE parameter)
 #define FS_GCS_DISABLED                        0
@@ -163,6 +163,7 @@ enum LoggingParameters {
 #define FS_GCS_ENABLED_ALWAYS_SMARTRTL_OR_LAND 4
 #define FS_GCS_ENABLED_ALWAYS_LAND             5
 #define FS_GCS_ENABLED_AUTO_RTL_OR_RTL         6
+#define FS_GCS_ENABLED_PLANCK_TRACK_PLANCK_LAND 7
 
 // EKF failsafe definitions (FS_EKF_ACTION parameter)
 #define FS_EKF_ACTION_LAND                  1       // switch to LAND mode on EKF failsafe

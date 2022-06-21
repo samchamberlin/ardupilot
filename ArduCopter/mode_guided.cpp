@@ -49,7 +49,7 @@ bool ModeGuided::init(bool ignore_checks)
 
 // run - runs the guided controller
 // should be called at 100hz or more
-void ModeGuided::run()
+void ModeGuided::run(bool high_jerk_z)
 {
     // run pause control if the vehicle is paused
     if (_paused) {
@@ -92,7 +92,7 @@ void ModeGuided::run()
         break;
 
     case SubMode::Angle:
-        angle_control_run();
+        angle_control_run(high_jerk_z);
         break;
     }
  }
@@ -973,7 +973,7 @@ void ModeGuided::posvelaccel_control_run()
 
 // angle_control_run - runs the guided angle controller
 // called from guided_run
-void ModeGuided::angle_control_run()
+void ModeGuided::angle_control_run(bool high_jerk_z)
 {
     float climb_rate_cms = 0.0f;
     if (!guided_angle_state.use_thrust) {

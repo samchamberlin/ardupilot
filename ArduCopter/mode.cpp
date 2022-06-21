@@ -168,6 +168,21 @@ Mode *Copter::mode_from_mode_num(const Mode::Number mode)
             ret = &mode_autorotate;
             break;
 #endif
+        case Mode::Number::PLANCKTRACK:
+            ret = &mode_plancktracking;
+            break;
+
+        case Mode::Number::PLANCKRTB:
+            ret = &mode_planckrtb;
+            break;
+
+        case Mode::Number::PLANCKLAND:
+            ret = &mode_planckland;
+            break;
+
+        case Mode::Number::PLANCKWINGMAN:
+            ret = &mode_planckwingman;
+            break;
 
 #if MODE_TURTLE_ENABLED == ENABLED
         case Mode::Number::TURTLE:
@@ -386,6 +401,11 @@ void Copter::exit_mode(Mode *&old_flightmode,
         }
     }
 #endif //HELI_FRAME
+
+    //If the new flight mode does not require planck commands, tell planck to stop commanding
+    if(!new_flightmode->requires_planck()) {
+        planck_interface.stop_commanding();
+    }
 }
 
 // notify_flight_mode - sets notify object based on current flight mode.  Only used for OreoLED notify device

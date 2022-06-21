@@ -69,6 +69,7 @@
 #include <AC_Sprayer/AC_Sprayer.h>          // Crop sprayer library
 #include <AP_ADSB/AP_ADSB.h>                // ADS-B RF based collision avoidance module library
 #include <AP_Proximity/AP_Proximity.h>      // ArduPilot proximity sensor library
+#include <AC_Planck/AC_Planck.h>
 
 // Configuration
 #include "defines.h"
@@ -217,6 +218,10 @@ public:
     friend class ModeZigZag;
     friend class ModeAutorotate;
     friend class ModeTurtle;
+    friend class ModePlanckTracking;
+    friend class ModePlanckRTB;
+    friend class ModePlanckLand;
+    friend class ModePlanckWingman;
 
     Copter(void);
 
@@ -577,6 +582,8 @@ private:
     static const AP_Param::Info var_info[];
     static const struct LogStructure log_structure[];
 
+    AC_Planck planck_interface;
+
     // enum for ESC CALIBRATION
     enum ESCCalibrationModes : uint8_t {
         ESCCAL_NONE = 0,
@@ -593,7 +600,8 @@ private:
         SMARTRTL           = 3,
         SMARTRTL_LAND      = 4,
         TERMINATE          = 5,
-        AUTO_DO_LAND_START = 6
+        AUTO_DO_LAND_START = 6,
+        PLANCK_TRACK_LAND  = 7
     };
 
     enum class FailsafeOption {
@@ -618,6 +626,7 @@ private:
                                                       (int8_t)FailsafeAction::RTL,
                                                       (int8_t)FailsafeAction::SMARTRTL_LAND,
                                                       (int8_t)FailsafeAction::SMARTRTL,
+                                                      (int8_t)FailsafeAction::PLANCK_TRACK_LAND,
                                                       (int8_t)FailsafeAction::NONE,
                                                       -1 // the priority list must end with a sentinel of -1
                                                      };
@@ -742,6 +751,7 @@ private:
     void set_mode_SmartRTL_or_RTL(ModeReason reason);
     void set_mode_SmartRTL_or_land_with_pause(ModeReason reason);
     void set_mode_auto_do_land_start_or_RTL(ModeReason reason);
+    void set_mode_planck_RTB_or_planck_land(ModeReason reason);
     bool should_disarm_on_failsafe();
     void do_failsafe_action(FailsafeAction action, ModeReason reason);
 
@@ -990,6 +1000,11 @@ private:
 #if MODE_TURTLE_ENABLED == ENABLED
     ModeTurtle mode_turtle;
 #endif
+
+    ModePlanckTracking mode_plancktracking;
+    ModePlanckRTB mode_planckrtb;
+    ModePlanckLand mode_planckland;
+    ModePlanckWingman mode_planckwingman;
 
     // mode.cpp
     Mode *mode_from_mode_num(const Mode::Number mode);

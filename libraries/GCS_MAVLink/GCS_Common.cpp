@@ -142,7 +142,7 @@ bool GCS_MAVLINK::init(uint8_t instance)
     }
     // since tcdrain() and TCSADRAIN may not be implemented...
     hal.scheduler->delay(1);
-    
+
     _port->set_flow_control(old_flow_control);
 
     // now change back to desired baudrate
@@ -155,7 +155,7 @@ bool GCS_MAVLINK::init(uint8_t instance)
     if (status == nullptr) {
         return false;
     }
-    
+
     if (mavlink_protocol == AP_SerialManager::SerialProtocol_MAVLink2) {
         // load signing key
         load_signing_key();
@@ -1464,7 +1464,7 @@ GCS_MAVLINK::update_receive(uint32_t max_time_us)
     {
         const uint8_t c = (uint8_t)_port->read();
         const uint32_t protocol_timeout = 4000;
-        
+
         if (alternative.handler &&
             now_ms - alternative.last_mavlink_ms > protocol_timeout) {
             /*
@@ -1476,7 +1476,7 @@ GCS_MAVLINK::update_receive(uint32_t max_time_us)
                 alternative.last_alternate_ms = now_ms;
                 gcs_alternative_active[chan] = true;
             }
-            
+
             /*
               we may also try parsing as MAVLink if we haven't had a
               successful parse on the alternative protocol for 4s
@@ -2446,6 +2446,111 @@ void GCS_MAVLINK::send_local_position() const
         velocity.z);
 }
 
+void GCS::send_planck_stateinfo()
+{
+    for(uint8_t i=0; i<num_gcs(); i++) {
+        chan(i)->send_planck_stateinfo();
+    }
+}
+
+void GCS_MAVLINK::send_planck_stateinfo()
+{
+    //Sanity check
+    uint64_t now = AP_HAL::millis64();
+    if(now <= last_planck_stateinfo_sent_ms) {
+        last_planck_stateinfo_sent_ms = now;
+        return;
+    }
+
+    //Don't send if its too soon
+    uint64_t interval = get_interval_for_stream(STREAM_PLANCK);
+    uint64_t dt = now - last_planck_stateinfo_sent_ms;
+    if((interval == 0) || (dt < (interval - interval/10))) { //within 10%
+        return;
+    }
+
+    //Make sure theres space
+    if(!HAVE_PAYLOAD_SPACE(chan,PLANCK_STATEINFO)) {
+        return;
+    }
+
+    uint8_t status = 0x00;
+    if(AP::arming().is_armed())
+      status |= 0x01;
+
+    if(landed_state() != MAV_LANDED_STATE_ON_GROUND)
+      status |= 0x02;
+
+    if(vehicle_system_status() == MAV_STATE_CRITICAL)
+      status |= 0x04;
+
+    const AP_AHRS &ahrs = AP::ahrs();
+
+    Vector3f accel;
+
+    if(!ahrs.get_accel_NED_Current(accel))
+    {
+        accel.zero();
+    }
+
+    Vector3f gyro = ahrs.get_gyro_latest();
+
+    Vector3f vel;
+    if(!ahrs.get_velocity_NED(vel))
+    {
+        vel.zero();
+    }
+
+    Location current_loc;
+    int32_t alt_above_home_cm = 0;
+    int32_t alt_above_sea_level_cm = 0;
+    int32_t alt_above_terrain_cm = 0;
+    ahrs.get_position(current_loc);
+
+    if(current_loc.initialised()) {
+        if(!current_loc.get_alt_cm(Location::AltFrame::ABOVE_HOME, alt_above_home_cm))
+        {
+            alt_above_home_cm = global_position_int_relative_alt()/10;
+        }
+        if(!current_loc.get_alt_cm(Location::AltFrame::ABSOLUTE, alt_above_sea_level_cm))
+        {
+            alt_above_sea_level_cm = alt_above_home_cm;
+        }
+        if(!current_loc.get_alt_cm(Location::AltFrame::ABOVE_TERRAIN, alt_above_terrain_cm))
+        {
+            alt_above_terrain_cm = alt_above_home_cm;
+        }
+    }
+
+    last_planck_stateinfo_sent_ms = now;
+
+    mavlink_msg_planck_stateinfo_send(
+      chan,
+      mavlink_system.sysid,
+      PLANCK_CTRL_COMP_ID,
+      AP_HAL::micros64(),
+      AP::gps().time_epoch_usec(),
+      gcs().custom_mode(),
+      status,
+      ahrs.roll,
+      ahrs.pitch,
+      ahrs.yaw,
+      gyro.x,
+      gyro.y,
+      gyro.z,
+      accel.x,
+      accel.y,
+      accel.z,
+      current_loc.lat,                // in 1E7 degrees
+      current_loc.lng,                // in 1E7 degrees
+      alt_above_sea_level_cm * 10UL,  // millimeters above sea level
+      alt_above_home_cm * 10UL,       // millimeters above ground
+      alt_above_terrain_cm * 10UL,    // millimeters above terrain
+      vel.x,                          // X speed m/s (+ve North)
+      vel.y,                          // Y speed m/s (+ve East)
+      vel.z);                         // Z speed m/s (+ve up)
+}
+
 /*
   send VIBRATION message
  */
@@ -2708,7 +2813,7 @@ void GCS_MAVLINK::send_servo_output_raw()
         if (values[i] == 65535) {
             values[i] = 0;
         }
-    }    
+    }
     mavlink_msg_servo_output_raw_send(
             chan,
             AP_HAL::micros(),
@@ -2782,7 +2887,7 @@ void GCS_MAVLINK::send_vfr_hud()
 }
 
 /*
-  handle a MAV_CMD_PREFLIGHT_REBOOT_SHUTDOWN command 
+  handle a MAV_CMD_PREFLIGHT_REBOOT_SHUTDOWN command
 
   Optionally disable PX4IO overrides. This is done for quadplanes to
   prevent the mixer running while rebooting which can start the VTOL
@@ -3639,7 +3744,7 @@ void GCS_MAVLINK::handle_common_message(const mavlink_message_t &msg)
 
     case MAVLINK_MSG_ID_DATA96:
         handle_data_packet(msg);
-        break;        
+        break;
 
     case MAVLINK_MSG_ID_VISION_POSITION_DELTA:
         handle_vision_position_delta(msg);
@@ -5459,6 +5564,11 @@ bool GCS_MAVLINK::try_send_message(const enum ap_message id)
         CHECK_PAYLOAD_SIZE(UAVIONIX_ADSB_OUT_STATUS);
         send_uavionix_adsb_out_status();
         break;
+
+    case MSG_PLANCK_STATEINFO: {
+        //Don't do anything, as this is run in its own task
+        break;
+    }
 
     default:
         // try_send_message must always at some stage return true for

@@ -966,6 +966,14 @@ float NavEKF2::getPosDownDerivative(int8_t instance) const
     return 0.0f;
 }
 
+// This returns the specific forces in the NED frame at Current Time
+void NavEKF2::getAccelNEDCurrent(Vector3F &accelNEDCurrent) const
+{
+    if (core) {
+        core[primary].getAccelNEDCurrent(accelNEDCurrent);
+    }
+}
+
 // return body axis gyro bias estimates in rad/sec
 void NavEKF2::getGyroBias(int8_t instance, Vector3f &gyroBias) const
 {
