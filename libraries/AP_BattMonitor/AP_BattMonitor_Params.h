@@ -61,4 +61,5 @@ public:
     AP_Int32 _arming_minimum_capacity;  /// capacity level required to arm
     AP_Float _arming_minimum_voltage;   /// voltage level required to arm
     AP_Int8  _i2c_bus;                  /// I2C bus number
+    AP_Int8  _disconnect_enable;        /// Enable / disable battery disconnect
 };

@@ -169,6 +169,13 @@ const AP_Param::GroupInfo AP_BattMonitor_Params::var_info[] = {
     // @User: Standard
     AP_GROUPINFO("BUS", 20, AP_BattMonitor_Params, _i2c_bus, 0),
 
+    // @Param: DISCONNECT
+    // @DisplayName: Battery disconnect enable / disable
+    // @Description: Battery disconnect enable / disable
+    // @Range: 0 1
+    // @User: Standard
+    AP_GROUPINFO("DISCONNECT", 21, AP_BattMonitor_Params, _disconnect_enable, 0),
+
     AP_GROUPEND
 
 };
