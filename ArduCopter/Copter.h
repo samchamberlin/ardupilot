@@ -538,7 +538,7 @@ private:
     AP_Parachute parachute{relay};
 #endif
 
-    // Button
+    // Button 
 #if BUTTON_ENABLED == ENABLED
     AP_Button button;
 #endif
