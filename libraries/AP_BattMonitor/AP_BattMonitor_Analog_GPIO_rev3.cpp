@@ -34,17 +34,6 @@ void AP_BattMonitor_Analog_GPIO_rev3::timer() {
     return;
   }
 
-  // AP_BATTMONITOR_FET_EN_TETHER_REV3: Active high
-  bool new_is_using_battery = (bool)((buf & AP_BATTMONITOR_FET_EN_TETHER_REV3) == 0);
-  if(_is_using_battery ^ new_is_using_battery) {
-    if (new_is_using_battery) {
-      gcs().send_text(MAV_SEVERITY_CRITICAL, "Using battery power");
-    } else {
-      gcs().send_text(MAV_SEVERITY_CRITICAL, "Using tether power");
-    }
-  }
-  _is_using_battery = new_is_using_battery;
-
   // AP_BATTMONITOR_MCU_ALIVE_REV3: Active low
   bool new_mcu_alive = (bool)((buf & AP_BATTMONITOR_MCU_ALIVE_REV3) == 0);
   if(_mcu_alive ^ new_mcu_alive) {
@@ -55,6 +44,17 @@ void AP_BattMonitor_Analog_GPIO_rev3::timer() {
     }
   }
   _mcu_alive = new_mcu_alive;
+
+  // AP_BATTMONITOR_FET_EN_TETHER_REV3: Active high
+  bool new_is_using_battery = (bool)((buf & AP_BATTMONITOR_FET_EN_TETHER_REV3) == 0);
+  if(_is_using_battery ^ new_is_using_battery) {
+    if (new_is_using_battery) {
+      gcs().send_text(MAV_SEVERITY_CRITICAL, "Using battery power");
+    } else {
+      gcs().send_text(MAV_SEVERITY_CRITICAL, "Using tether power");
+    }
+  }
+  _is_using_battery = new_is_using_battery;
 
   // Push state:
   _state.on_tether_power = !_is_using_battery;
