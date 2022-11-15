@@ -84,7 +84,7 @@ void AP_BattMonitor_Analog_GPIO_rev3::timer() {
 
 void AP_BattMonitor_Analog_GPIO_rev3::set_batt_disco_en(bool enable)
 {
-  if(_params._disconnect_enable && _send_state.batt_disco_en !=  enable) {
+  if(_params._disconnect_enable > 0 && _send_state.batt_disco_en !=  enable) {
       _send_state.batt_disco_en = enable;
       _send_required = true;
   }
@@ -92,7 +92,7 @@ void AP_BattMonitor_Analog_GPIO_rev3::set_batt_disco_en(bool enable)
 
 void AP_BattMonitor_Analog_GPIO_rev3::set_batt_kill(bool enable)
 {
-  if(_params._disconnect_enable && _send_state.batt_kill !=  enable) {
+  if(_params._disconnect_enable > 0 && _send_state.batt_kill !=  enable) {
       _send_state.batt_kill = enable;
       _send_required = true;
   }
