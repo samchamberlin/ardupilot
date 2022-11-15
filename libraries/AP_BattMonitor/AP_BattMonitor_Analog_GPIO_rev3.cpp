@@ -31,28 +31,28 @@ void AP_BattMonitor_Analog_GPIO_rev3::timer() {
   //Read the state of the i2c device by reading one byte from register 0
   uint8_t buf;
   if(!_dev->read_registers(AP_BATTMONITOR_INPUT_REGISTER_REV3, &buf, 1)) {
-    return;
+      return;
   }
 
   // AP_BATTMONITOR_MCU_ALIVE_REV3: Active low
   bool new_mcu_alive = (bool)((buf & AP_BATTMONITOR_MCU_ALIVE_REV3) == 0);
   if(_mcu_alive ^ new_mcu_alive) {
-    if (new_mcu_alive) {
-      gcs().send_text(MAV_SEVERITY_CRITICAL, "Battery MCU alive");
-    } else {
-      gcs().send_text(MAV_SEVERITY_CRITICAL, "Battery MCU not alive");
-    }
+      if (new_mcu_alive) {
+          gcs().send_text(MAV_SEVERITY_CRITICAL, "Battery MCU alive");
+      } else {
+          gcs().send_text(MAV_SEVERITY_CRITICAL, "Battery MCU not alive");
+      }
   }
   _mcu_alive = new_mcu_alive;
 
   // AP_BATTMONITOR_FET_EN_TETHER_REV3: Active high
   bool new_is_using_battery = (bool)((buf & AP_BATTMONITOR_FET_EN_TETHER_REV3) == 0);
   if(_is_using_battery ^ new_is_using_battery) {
-    if (new_is_using_battery) {
-      gcs().send_text(MAV_SEVERITY_CRITICAL, "Using battery power");
-    } else {
-      gcs().send_text(MAV_SEVERITY_CRITICAL, "Using tether power");
-    }
+      if (new_is_using_battery) {
+          gcs().send_text(MAV_SEVERITY_CRITICAL, "Using battery power");
+      } else {
+          gcs().send_text(MAV_SEVERITY_CRITICAL, "Using tether power");
+      }
   }
   _is_using_battery = new_is_using_battery;
 
@@ -61,39 +61,40 @@ void AP_BattMonitor_Analog_GPIO_rev3::timer() {
   _state.mcu_alive   = _mcu_alive;
 
   if (_send_required) {
-    // Configuration inputs / outputs register
-    _dev->write_register(AP_BATTMONITOR_CFG_REGISTER_REV3, AP_BATTMONITOR_CFG_OUTPUT_REV3);
+      // Configuration inputs / outputs register
+      _dev->write_register(AP_BATTMONITOR_CFG_REGISTER_REV3, AP_BATTMONITOR_CFG_OUTPUT_REV3);
 
-    // BATT_DISCO_EN: active low
-    uint8_t register_value = 0;
-    if(!_send_state.batt_disco_en)
-      register_value |= AP_BATTMONITOR_BATT_DISCO_EN_REV3;
+      // BATT_DISCO_EN: active low
+      uint8_t register_value = 0;
+      if(!_send_state.batt_disco_en)
+          register_value |= AP_BATTMONITOR_BATT_DISCO_EN_REV3;
 
-    // BATT_KILL: active high
-    if(_send_state.batt_kill)
-      register_value |= AP_BATTMONITOR_BATT_KILL_REV3;
+      // BATT_KILL: active high
+      if(_send_state.batt_kill)
+          register_value |= AP_BATTMONITOR_BATT_KILL_REV3;
 
-    _dev->write_register(AP_BATTMONITOR_OUTPUT_REGISTER_REV3, register_value);
-    gcs().send_text(MAV_SEVERITY_CRITICAL, "BATT_DISCO_EN:(%d) BATT_KILL:(%d)", (int)_send_state.batt_disco_en, (int)_send_state.batt_kill);
+      if(_send_state.batt_disco_en && _send_state.batt_kill) 
+          gcs().send_text(MAV_SEVERITY_CRITICAL, "Disconnecting battery");
 
-    // flag updates sent
-    _send_required = false;
-  }
+      // Send it msg 
+      _dev->write_register(AP_BATTMONITOR_OUTPUT_REGISTER_REV3, register_value);
+      _send_required = false;
+    }
 }
 
 void AP_BattMonitor_Analog_GPIO_rev3::set_batt_disco_en(bool enable)
 {
   if(_params._disconnect_enable && _send_state.batt_disco_en !=  enable) {
-    _send_state.batt_disco_en = enable;
-    _send_required = true;
+      _send_state.batt_disco_en = enable;
+      _send_required = true;
   }
 }
 
 void AP_BattMonitor_Analog_GPIO_rev3::set_batt_kill(bool enable)
 {
   if(_params._disconnect_enable && _send_state.batt_kill !=  enable) {
-    _send_state.batt_kill = enable;
-    _send_required = true;
+      _send_state.batt_kill = enable;
+      _send_required = true;
   }
 }
 
