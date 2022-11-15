@@ -58,7 +58,7 @@ void AP_BattMonitor_Analog_GPIO_rev3::timer() {
 
   // Push state:
   _state.on_tether_power = !_is_using_battery;
-  _state.mcu_alive   = _mcu_alive;
+  _state.mcu_alive = _mcu_alive;
 
   if (_send_required) {
       // Configuration inputs / outputs register
