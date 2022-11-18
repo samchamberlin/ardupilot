@@ -36,9 +36,15 @@ public:
     void set_batt_kill(bool enable) override;
 
 private:
+  HAL_Semaphore_Recursive _sem;
   AP_HAL::OwnPtr<AP_HAL::I2CDevice> _dev;
+
+  // Current state
   bool _is_using_battery = false;
   bool _mcu_alive = false;
+
+  // Battery disconnect logic
+  bool _batt_disconnect_enable = false;
 
   struct send_state {
     bool batt_disco_en = false;

@@ -321,8 +321,8 @@ void Copter::battery_switch_status_check()
     for(uint8_t i = 0; i < battery.num_instances(); i++) {
         if (battery.get_type(i) == AP_BattMonitor_Params::BattMonitor_Type::BattMonitor_TYPE_ANALOG_VOLTAGE_AND_CURRENT_AND_GPIO_REV3) {
 
-            bool batt_disco_en = !motors->armed() && AP::battery().mcu_alive();
-            bool batt_kill = batt_disco_en && !AP::battery().on_tether_power(i);
+            bool batt_disco_en = !motors->armed() && battery.mcu_alive(i);
+            bool batt_kill = batt_disco_en && !battery.on_tether_power(i);
 
             battery.set_batt_kill(batt_kill, i);
             battery.set_batt_disco_en(batt_disco_en, i);

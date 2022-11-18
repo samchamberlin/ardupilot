@@ -10,6 +10,7 @@ AP_BattMonitor_Analog_GPIO_rev3::AP_BattMonitor_Analog_GPIO_rev3(AP_BattMonitor 
     : AP_BattMonitor_Analog(mon, mon_state, params), _dev(std::move(dev)) {
   _state.on_tether_power = false;
   _state.mcu_alive = false;
+  _batt_disconnect_enable = _params._disconnect_enable > 0;
 }
 
 void AP_BattMonitor_Analog_GPIO_rev3::init(void) {
@@ -60,6 +61,7 @@ void AP_BattMonitor_Analog_GPIO_rev3::timer() {
   _state.on_tether_power = !_is_using_battery;
   _state.mcu_alive = _mcu_alive;
 
+  WITH_SEMAPHORE(_sem);
   if (_send_required) {
       // Configuration inputs / outputs register
       _dev->write_register(AP_BATTMONITOR_CFG_REGISTER_REV3, AP_BATTMONITOR_CFG_OUTPUT_REV3);
@@ -84,6 +86,10 @@ void AP_BattMonitor_Analog_GPIO_rev3::timer() {
 
 void AP_BattMonitor_Analog_GPIO_rev3::set_batt_disco_en(bool enable)
 {
+  if(!_batt_disconnect_enable)
+    return;
+
+  WITH_SEMAPHORE(_sem);
   if(_params._disconnect_enable > 0 && _send_state.batt_disco_en !=  enable) {
       _send_state.batt_disco_en = enable;
       _send_required = true;
@@ -92,7 +98,11 @@ void AP_BattMonitor_Analog_GPIO_rev3::set_batt_disco_en(bool enable)
 
 void AP_BattMonitor_Analog_GPIO_rev3::set_batt_kill(bool enable)
 {
-  if(_params._disconnect_enable > 0 && _send_state.batt_kill !=  enable) {
+  if(!_batt_disconnect_enable)
+    return;
+
+  WITH_SEMAPHORE(_sem);
+  if(_send_state.batt_kill !=  enable) {
       _send_state.batt_kill = enable;
       _send_required = true;
   }
