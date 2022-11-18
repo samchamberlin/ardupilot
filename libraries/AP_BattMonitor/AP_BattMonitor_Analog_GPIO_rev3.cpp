@@ -90,7 +90,7 @@ void AP_BattMonitor_Analog_GPIO_rev3::set_batt_disco_en(bool enable)
     return;
 
   WITH_SEMAPHORE(_sem);
-  if(_params._disconnect_enable > 0 && _send_state.batt_disco_en !=  enable) {
+  if(_send_state.batt_disco_en !=  enable) {
       _send_state.batt_disco_en = enable;
       _send_required = true;
   }
