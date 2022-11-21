@@ -28,7 +28,8 @@ public:
         BattMonitor_TYPE_SUI3                       = 13,
         BattMonitor_TYPE_SUI6                       = 14,
         BattMonitor_TYPE_NeoDesign                  = 15,
-        BattMonitor_TYPE_ANALOG_VOLTAGE_AND_CURRENT_AND_GPIO = 16,
+        BattMonitor_TYPE_ANALOG_VOLTAGE_AND_CURRENT_AND_GPIO_REV2 = 16,
+        BattMonitor_TYPE_ANALOG_VOLTAGE_AND_CURRENT_AND_GPIO_REV3 = 17
     };
 
     // low voltage sources (used for BATT_LOW_TYPE parameter)
@@ -60,4 +61,5 @@ public:
     AP_Int32 _arming_minimum_capacity;  /// capacity level required to arm
     AP_Float _arming_minimum_voltage;   /// voltage level required to arm
     AP_Int8  _i2c_bus;                  /// I2C bus number
+    AP_Int8  _disconnect_enable;        /// Enable / disable battery disconnect
 };
