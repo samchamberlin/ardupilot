@@ -89,10 +89,15 @@ const AP_HAL::HAL& hal = AP_HAL::get_HAL();
   and the maximum time they are expected to take (in microseconds)
  */
 const AP_Scheduler::Task Copter::scheduler_tasks[] = {
+    SCHED_TASK_CLASS(GCS,                  (GCS*)&copter._gcs,          send_planck_stateinfo,    400, 50),
+    SCHED_TASK_CLASS(GCS,                  (GCS*)&copter._gcs,          update_receive, 400, 180),
+    SCHED_TASK_CLASS(GCS,                  (GCS*)&copter._gcs,          update_send,    400, 550),
+    SCHED_TASK_CLASS(AP_InertialSensor,    &copter.ins,                 periodic,       400,  50),
+    SCHED_TASK_CLASS(AP_Scheduler,         &copter.scheduler,           update_logging, 0.1,  75),
     SCHED_TASK(rc_loop,              100,    130),
     SCHED_TASK(throttle_loop,         50,     75),
     SCHED_TASK(update_GPS,            50,    200),
-    SCHED_TASK_CLASS(GCS,                  (GCS*)&copter._gcs,          send_planck_stateinfo,    100, 100),
+    
 #if OPTFLOW == ENABLED
     SCHED_TASK_CLASS(OpticalFlow,          &copter.optflow,             update,         200, 160),
 #endif
@@ -148,8 +153,6 @@ const AP_Scheduler::Task Copter::scheduler_tasks[] = {
     SCHED_TASK(landinggear_update,    10,     75),
     SCHED_TASK(standby_update,        100,    75),
     SCHED_TASK(lost_vehicle_check,    10,     50),
-    SCHED_TASK_CLASS(GCS,                  (GCS*)&copter._gcs,          update_receive, 400, 180),
-    SCHED_TASK_CLASS(GCS,                  (GCS*)&copter._gcs,          update_send,    400, 550),
 #if MOUNT == ENABLED
     SCHED_TASK_CLASS(AP_Mount,             &copter.camera_mount,        update,          50,  75),
 #endif
@@ -161,8 +164,6 @@ const AP_Scheduler::Task Copter::scheduler_tasks[] = {
     SCHED_TASK(twentyfive_hz_logging, 25,    110),
     SCHED_TASK_CLASS(AP_Logger,      &copter.logger,           periodic_tasks, 400, 300),
 #endif
-    SCHED_TASK_CLASS(AP_InertialSensor,    &copter.ins,                 periodic,       400,  50),
-    SCHED_TASK_CLASS(AP_Scheduler,         &copter.scheduler,           update_logging, 0.1,  75),
 #if RPM_ENABLED == ENABLED
     SCHED_TASK(rpm_update,            40,    200),
 #endif
